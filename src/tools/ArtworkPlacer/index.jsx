@@ -247,7 +247,7 @@ export default function ArtworkPlacer({ onCanvasReady }) {
       const plane = planesById.get(id);
       if (!plane) return;
 
-      const quad = plane.quad.map(([x, y]) => [x * scale, y * scale]);
+      const quad = plane.quad.map(([x, y, u, v]) => [x * scale, y * scale, u, v]);
       const pixels = warpAndComposite(
         canvas,
         artwork.img,
@@ -276,7 +276,7 @@ export default function ArtworkPlacer({ onCanvasReady }) {
 
       ctx.beginPath();
       ctx.moveTo(plane.quad[0][0], plane.quad[0][1]);
-      for (let i = 1; i < 4; i++) ctx.lineTo(plane.quad[i][0], plane.quad[i][1]);
+      for (let i = 1; i < plane.quad.length; i++) ctx.lineTo(plane.quad[i][0], plane.quad[i][1]);
       ctx.closePath();
       ctx.strokeStyle = target.type === 'group' ? 'rgba(74,222,128,0.95)' : 'rgba(108,143,255,0.9)';
       ctx.lineWidth = 2;

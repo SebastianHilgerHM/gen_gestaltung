@@ -12,6 +12,7 @@ import { warpAndComposite } from './warp.js';
 const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay'];
 const DISPLAY_MAX = 700;
 const LABELS = ['TL', 'TR', 'BR', 'BL'];
+const CORNER_UVS = [[0, 0], [1, 0], [1, 1], [0, 1]];
 const EDGES = [
   { label: 'Top', corners: [0, 1] },
   { label: 'Right', corners: [1, 2] },
@@ -40,31 +41,74 @@ function makePlane(id, canvas, index) {
     name: `Plane ${id}`,
     mode: 'manual',
     quad: [
-      [x, y],
-      [x + w, y],
-      [x + w, y + h],
-      [x, y + h],
+      [x, y, 0, 0],
+      [x + w, y, 1, 0],
+      [x + w, y + h, 1, 1],
+      [x, y + h, 0, 1],
     ],
   };
 }
 
-function clampPoint([x, y], canvas) {
-  return [
+function withCornerUvs(points) {
+  return points.map((p, i) => [p[0], p[1], ...(p.length > 3 ? [p[2], p[3]] : CORNER_UVS[i] ?? [0.5, 0.5])]);
+}
+
+function clampPoint(point, canvas) {
+  const [x, y] = point;
+  const next = [
     Math.max(0, Math.min(canvas.width, x)),
     Math.max(0, Math.min(canvas.height, y)),
   ];
+  if (point.length > 3) next.push(point[2], point[3]);
+  return next;
 }
 
-function edgeCorner(edge, pos, reverse) {
-  return EDGES[edge].corners[reverse ? 1 - pos : pos];
+function uvMatches(point, [u, v]) {
+  return Math.abs((point[2] ?? 0.5) - u) < 0.001 && Math.abs((point[3] ?? 0.5) - v) < 0.001;
 }
 
-function linkedCorners(connections, planeId, corner) {
+function cornerIndex(points, corner) {
+  const uv = CORNER_UVS[corner];
+  return points.findIndex(point => uvMatches(point, uv));
+}
+
+function edgeCorner(points, edge, pos, reverse) {
+  const corner = EDGES[edge].corners[reverse ? 1 - pos : pos];
+  return cornerIndex(points, corner);
+}
+
+function edgeIndices(points, edge) {
+  const onEdge = points
+    .map((point, i) => ({ point, i }))
+    .filter(({ point }) => {
+      const u = point[2] ?? 0.5;
+      const v = point[3] ?? 0.5;
+      return (
+        (edge === 0 && Math.abs(v) < 0.001)
+        || (edge === 1 && Math.abs(u - 1) < 0.001)
+        || (edge === 2 && Math.abs(v - 1) < 0.001)
+        || (edge === 3 && Math.abs(u) < 0.001)
+      );
+    });
+
+  return onEdge
+    .sort((a, b) => (
+      edge === 0 ? a.point[2] - b.point[2]
+        : edge === 1 ? a.point[3] - b.point[3]
+          : edge === 2 ? b.point[2] - a.point[2]
+            : b.point[3] - a.point[3]
+    ))
+    .map(item => item.i);
+}
+
+function linkedCorners(connections, planesById, planeId, corner) {
   const seen = new Set([`${planeId}:${corner}`]);
   const queue = [{ planeId, corner }];
 
   for (let i = 0; i < queue.length; i++) {
     const current = queue[i];
+    const currentPlane = planesById.get(current.planeId);
+    if (!currentPlane) continue;
 
     connections.forEach(conn => {
       [
@@ -73,12 +117,19 @@ function linkedCorners(connections, planeId, corner) {
       ].forEach(([from, to]) => {
         if (from.planeId !== current.planeId) return;
 
-        const pos = EDGES[from.edge].corners.indexOf(current.corner);
+        const endpoints = EDGES[from.edge].corners.map(corner => cornerIndex(currentPlane.quad, corner));
+        const pos = endpoints.indexOf(current.corner);
         if (pos < 0) return;
+
+        const targetPlane = planesById.get(to.planeId);
+        if (!targetPlane) return;
+
+        const corner = edgeCorner(targetPlane.quad, to.edge, pos, conn.reverse);
+        if (corner < 0) return;
 
         const next = {
           planeId: to.planeId,
-          corner: edgeCorner(to.edge, pos, conn.reverse),
+          corner,
         };
         const key = `${next.planeId}:${next.corner}`;
         if (!seen.has(key)) {
@@ -90,6 +141,22 @@ function linkedCorners(connections, planeId, corner) {
   }
 
   return queue;
+}
+
+function distanceToSegment(px, py, a, b) {
+  const vx = b[0] - a[0];
+  const vy = b[1] - a[1];
+  const lenSq = vx * vx + vy * vy;
+  if (!lenSq) return { dist: Math.hypot(px - a[0], py - a[1]), t: 0 };
+
+  const t = Math.max(0, Math.min(1, ((px - a[0]) * vx + (py - a[1]) * vy) / lenSq));
+  const x = a[0] + vx * t;
+  const y = a[1] + vy * t;
+  return { dist: Math.hypot(px - x, py - y), t };
+}
+
+function originalCorner(point) {
+  return CORNER_UVS.some(uv => uvMatches(point, uv));
 }
 
 export default function QuadMapper({ onCanvasReady }) {
@@ -140,6 +207,18 @@ export default function QuadMapper({ onCanvasReady }) {
     () => new Map(planes.map(plane => [plane.id, plane])),
     [planes],
   );
+
+  useEffect(() => {
+    if (!planes.some(plane => plane.quad.some(point => point.length < 4))) return;
+
+    setQuadMapper(s => ({
+      ...s,
+      planes: s.planes.map(plane => ({
+        ...plane,
+        quad: withCornerUvs(plane.quad),
+      })),
+    }));
+  }, [planes, setQuadMapper]);
 
   const drawExport = useCallback((pixels) => {
     if (!exportCanvasRef.current) return;
@@ -198,7 +277,7 @@ export default function QuadMapper({ onCanvasReady }) {
     const active = plane.id === selectedPlane?.id;
     ctx.beginPath();
     ctx.moveTo(plane.quad[0][0], plane.quad[0][1]);
-    for (let i = 1; i < 4; i++) ctx.lineTo(plane.quad[i][0], plane.quad[i][1]);
+    for (let i = 1; i < plane.quad.length; i++) ctx.lineTo(plane.quad[i][0], plane.quad[i][1]);
     ctx.closePath();
     ctx.strokeStyle = active ? 'rgba(108,143,255,0.95)' : 'rgba(154,160,168,0.75)';
     ctx.lineWidth = active ? 2 : 1.25;
@@ -209,10 +288,11 @@ export default function QuadMapper({ onCanvasReady }) {
     connections.forEach(conn => {
       [conn.a, conn.b].forEach(side => {
         if (side.planeId !== plane.id) return;
-        const [a, b] = EDGES[side.edge].corners;
+        const indices = edgeIndices(plane.quad, side.edge);
+        if (indices.length < 2) return;
         ctx.beginPath();
-        ctx.moveTo(plane.quad[a][0], plane.quad[a][1]);
-        ctx.lineTo(plane.quad[b][0], plane.quad[b][1]);
+        ctx.moveTo(plane.quad[indices[0]][0], plane.quad[indices[0]][1]);
+        indices.slice(1).forEach(i => ctx.lineTo(plane.quad[i][0], plane.quad[i][1]));
         ctx.strokeStyle = 'rgba(74,222,128,0.95)';
         ctx.lineWidth = 4;
         ctx.stroke();
@@ -230,7 +310,7 @@ export default function QuadMapper({ onCanvasReady }) {
       ctx.fillStyle = active ? '#6c8fff' : '#9aa0a8';
       ctx.font = '9px system-ui';
       ctx.textAlign = 'center';
-      ctx.fillText(LABELS[i], x, y - 10);
+      ctx.fillText(LABELS.find((_, corner) => cornerIndex(plane.quad, corner) === i) ?? '+', x, y - 10);
     });
   }, [connections, selectedPlane?.id]);
 
@@ -285,6 +365,44 @@ export default function QuadMapper({ onCanvasReady }) {
     ];
   };
 
+  const pointHit = (mx, my) => {
+    let best = null;
+
+    layers.order.forEach(layerId => {
+      if (!layerId.startsWith('plane:') || layers.hidden[layerId]) return;
+      const plane = planesById.get(idFromLayer(layerId));
+      if (!plane) return;
+
+      plane.quad.forEach(([x, y], corner) => {
+        const dist = Math.hypot(mx - x, my - y);
+        if (dist < 14 && (!best || dist < best.dist)) {
+          best = { planeId: plane.id, corner, dist };
+        }
+      });
+    });
+
+    return best;
+  };
+
+  const edgeHit = (mx, my) => {
+    if (!selectedPlane || selectedPlane.mode === 'auto') return null;
+
+    return selectedPlane.quad.reduce((best, point, edge) => {
+      const next = selectedPlane.quad[(edge + 1) % selectedPlane.quad.length];
+      const hit = distanceToSegment(mx, my, point, next);
+      if (hit.t <= 0.04 || hit.t >= 0.96 || hit.dist > 8) return best;
+      if (best && best.dist <= hit.dist) return best;
+      return {
+        planeId: selectedPlane.id,
+        edge,
+        t: hit.t,
+        dist: hit.dist,
+        x: point[0] + (next[0] - point[0]) * hit.t,
+        y: point[1] + (next[1] - point[1]) * hit.t,
+      };
+    }, null);
+  };
+
   const selectPlane = (id) => {
     setQuadMapper(s => ({ ...s, selectedPlaneId: id }));
     selectLayer(planeLayerId(id));
@@ -315,6 +433,51 @@ export default function QuadMapper({ onCanvasReady }) {
         connections: s.connections.filter(conn => conn.a.planeId !== id && conn.b.planeId !== id),
       };
     });
+  };
+
+  const insertPoint = (planeId, edge, t, x, y) => {
+    let index = edge + 1;
+
+    setQuadMapper(s => ({
+      ...s,
+      selectedPlaneId: planeId,
+      planes: s.planes.map(plane => {
+        if (plane.id !== planeId) return plane;
+
+        const a = plane.quad[edge];
+        const b = plane.quad[(edge + 1) % plane.quad.length];
+        index = edge + 1;
+        return {
+          ...plane,
+          quad: [
+            ...plane.quad.slice(0, index),
+            [
+              x,
+              y,
+              (a[2] ?? 0.5) + ((b[2] ?? 0.5) - (a[2] ?? 0.5)) * t,
+              (a[3] ?? 0.5) + ((b[3] ?? 0.5) - (a[3] ?? 0.5)) * t,
+            ],
+            ...plane.quad.slice(index),
+          ],
+        };
+      }),
+    }));
+    selectLayer(planeLayerId(planeId));
+    setDragging({ planeId, corner: index, lastX: x, lastY: y });
+  };
+
+  const removePoint = (planeId, corner) => {
+    const plane = planesById.get(planeId);
+    if (!plane || plane.quad.length <= 4 || originalCorner(plane.quad[corner])) return;
+
+    setQuadMapper(s => ({
+      ...s,
+      planes: s.planes.map(plane => (
+        plane.id === planeId
+          ? { ...plane, quad: plane.quad.filter((_, i) => i !== corner) }
+          : plane
+      )),
+    }));
   };
 
   const setSelectedPlaneMode = (mode) => {
@@ -356,23 +519,18 @@ export default function QuadMapper({ onCanvasReady }) {
   };
 
   const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+
     const [mx, my] = getCanvasPos(e);
-    let best = null;
-
-    layers.order.forEach(layerId => {
-      if (!layerId.startsWith('plane:') || layers.hidden[layerId]) return;
-      const plane = planesById.get(idFromLayer(layerId));
-      if (!plane) return;
-
-      plane.quad.forEach(([x, y], corner) => {
-        const dist = Math.hypot(mx - x, my - y);
-        if (dist < 14 && (!best || dist < best.dist)) {
-          best = { planeId: plane.id, corner, dist };
-        }
-      });
-    });
+    const best = pointHit(mx, my);
 
     if (!best) {
+      const edge = edgeHit(mx, my);
+      if (edge) {
+        insertPoint(edge.planeId, edge.edge, edge.t, edge.x, edge.y);
+        return;
+      }
+
       if (selectedPlane?.mode === 'auto') {
         setDetecting({ planeId: selectedPlane.id, start: [mx, my], current: [mx, my] });
       }
@@ -396,7 +554,7 @@ export default function QuadMapper({ onCanvasReady }) {
     const [x, y] = getCanvasPos(e);
     const dx = x - dragging.lastX;
     const dy = y - dragging.lastY;
-    const linked = linkedCorners(connections, dragging.planeId, dragging.corner);
+    const linked = linkedCorners(connections, planesById, dragging.planeId, dragging.corner);
     const keys = new Set(linked.map(({ planeId, corner }) => `${planeId}:${corner}`));
 
     setQuadMapper(s => ({
@@ -424,13 +582,26 @@ export default function QuadMapper({ onCanvasReady }) {
       setQuadMapper(s => ({
         ...s,
         planes: s.planes.map(plane => (
-          plane.id === detecting.planeId ? { ...plane, quad } : plane
+          plane.id === detecting.planeId ? { ...plane, quad: withCornerUvs(quad) } : plane
         )),
       }));
       setDetecting(null);
     }
 
     setDragging(null);
+  };
+
+  const onDoubleClick = (e) => {
+    const [mx, my] = getCanvasPos(e);
+    const hit = pointHit(mx, my);
+    if (hit) removePoint(hit.planeId, hit.corner);
+  };
+
+  const onContextMenu = (e) => {
+    e.preventDefault();
+    const [mx, my] = getCanvasPos(e);
+    const hit = pointHit(mx, my);
+    if (hit) removePoint(hit.planeId, hit.corner);
   };
 
   const handleComposite = useCallback(() => {
@@ -451,7 +622,7 @@ export default function QuadMapper({ onCanvasReady }) {
         const plane = planesById.get(idFromLayer(layerId));
         if (!plane) return;
 
-        const naturalQuad = plane.quad.map(([x, y]) => [x * scale, y * scale]);
+        const naturalQuad = plane.quad.map(([x, y, u, v]) => [x * scale, y * scale, u, v]);
         const pixels = warpAndComposite(offscreen, artwork.img, naturalQuad, opacity, blendMode);
         putPixels(offscreen, pixels);
       });
@@ -509,6 +680,8 @@ export default function QuadMapper({ onCanvasReady }) {
                   onMouseDown={onMouseDown}
                   onMouseMove={onMouseMove}
                   onMouseUp={onMouseUp}
+                  onDoubleClick={onDoubleClick}
+                  onContextMenu={onContextMenu}
                   onMouseLeave={onMouseUp}
                 />
               </div>
