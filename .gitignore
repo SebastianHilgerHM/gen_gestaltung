@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ComfyUI runtime data (models, generated images) - keep folder structure only
+comfyui/models/**
+!comfyui/models/**/
+!comfyui/models/**/.gitkeep
+comfyui/input/*
+!comfyui/input/.gitkeep
+comfyui/output/*
+!comfyui/output/.gitkeep
+comfyui/user/comfyui.db
+comfyui/user/comfyui.db.lock

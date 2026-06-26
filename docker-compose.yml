@@ -1,0 +1,22 @@
+services:
+  comfyui:
+    build: ./docker/comfyui
+    ports:
+      - "8188:8188"
+    volumes:
+      - ./comfyui/models:/app/models
+      - ./comfyui/input:/app/input
+      - ./comfyui/output:/app/output
+      - ./comfyui/user:/app/user
+    restart: unless-stopped
+
+  proxy:
+    build: ./server
+    ports:
+      - "8189:8189"
+    environment:
+      - COMFY_URL=http://comfyui:8188
+      - PORT=8189
+    depends_on:
+      - comfyui
+    restart: unless-stopped
