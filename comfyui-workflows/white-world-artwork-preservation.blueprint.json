@@ -1,0 +1,484 @@
+{
+  "id": "white-world-artwork-preservation",
+  "revision": 1,
+  "last_node_id": 10,
+  "last_link_id": 12,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [-1080, -120],
+      "size": [315, 150],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [1]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": ["", "image"]
+    },
+    {
+      "id": 2,
+      "type": "PictureplaneImageSplitTwoCopies",
+      "title": "Split Original Into Two Identical Copies",
+      "pos": [-700, -120],
+      "size": [330, 130],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "copy_a",
+          "type": "IMAGE",
+          "links": [2]
+        },
+        {
+          "name": "copy_b",
+          "type": "IMAGE",
+          "links": [3, 4, 8]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneImageSplitTwoCopies",
+        "purpose": "Pass the same source image into deterministic desaturation and artwork detection/compositing branches."
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "PictureplaneDesaturateImage",
+      "title": "Code Desaturate To White World",
+      "pos": [-300, -250],
+      "size": [360, 150],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "mode",
+          "type": "STRING",
+          "widget": {
+            "name": "mode"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [7]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneDesaturateImage",
+        "implementation": "Use code, not diffusion. Luminance formula: Y = 0.2126R + 0.7152G + 0.0722B; output RGB = Y,Y,Y."
+      },
+      "widgets_values": ["luminance"]
+    },
+    {
+      "id": 4,
+      "type": "PictureplaneArtworkDetector",
+      "title": "Detect Existing Artwork Regions",
+      "pos": [-300, 40],
+      "size": [420, 180],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "name": "text_prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "text_prompt"
+          },
+          "link": null
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "widget": {
+            "name": "confidence"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BOXES",
+          "type": "BBOX",
+          "links": [5]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneArtworkDetector",
+        "preferred_replacements": "GroundingDINO, Florence, OWL-ViT, or another open-vocabulary detector.",
+        "negative_rules": "Do not detect blank walls, furniture, windows, mirrors, lamps, people, or imagined artwork."
+      },
+      "widgets_values": [
+        "painting, framed artwork, poster, mural, drawing, print, canvas, illustration, wall art, artwork on display",
+        0.35
+      ]
+    },
+    {
+      "id": 5,
+      "type": "PictureplaneArtworkSegmenter",
+      "title": "Segment Artwork Masks",
+      "pos": [180, 40],
+      "size": [350, 140],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 4
+        },
+        {
+          "name": "boxes",
+          "type": "BBOX",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASKS",
+          "type": "MASK",
+          "links": [6]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneArtworkSegmenter",
+        "preferred_replacements": "SAM, SAM2, or an equivalent segmentation node driven by detector boxes."
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 6,
+      "type": "PictureplaneMaskUnion",
+      "title": "Merge Artwork Masks",
+      "pos": [600, 40],
+      "size": [300, 120],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 6
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [9]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMaskUnion"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "PictureplaneMaskCleanup",
+      "title": "Threshold, Expand, Feather Mask",
+      "pos": [960, 40],
+      "size": [360, 170],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 9
+        },
+        {
+          "name": "threshold",
+          "type": "FLOAT",
+          "widget": {
+            "name": "threshold"
+          },
+          "link": null
+        },
+        {
+          "name": "grow_px",
+          "type": "INT",
+          "widget": {
+            "name": "grow_px"
+          },
+          "link": null
+        },
+        {
+          "name": "feather_px",
+          "type": "INT",
+          "widget": {
+            "name": "feather_px"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [10]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMaskCleanup"
+      },
+      "widgets_values": [0.5, 1, 2]
+    },
+    {
+      "id": 8,
+      "type": "ImageCompositeMasked",
+      "title": "Composite Original Artwork Pixels Over White World",
+      "pos": [1400, -150],
+      "size": [360, 170],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "destination",
+          "name": "destination",
+          "type": "IMAGE",
+          "link": 7
+        },
+        {
+          "localized_name": "source",
+          "name": "source",
+          "type": "IMAGE",
+          "link": 8
+        },
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "shape": 7,
+          "type": "MASK",
+          "link": 10
+        },
+        {
+          "localized_name": "x",
+          "name": "x",
+          "type": "INT",
+          "widget": {
+            "name": "x"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "y",
+          "name": "y",
+          "type": "INT",
+          "widget": {
+            "name": "y"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "resize_source",
+          "name": "resize_source",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "resize_source"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [11, 12]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageCompositeMasked",
+        "purpose": "Use the artwork mask as the only color restore boundary."
+      },
+      "widgets_values": [0, 0, false]
+    },
+    {
+      "id": 9,
+      "type": "PreviewImage",
+      "pos": [1830, -170],
+      "size": [210, 80],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 10,
+      "type": "SaveImage",
+      "pos": [1830, -40],
+      "size": [315, 100],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 12
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": ["white_world_artwork_preservation"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 2, 0, "IMAGE"],
+    [2, 2, 0, 3, 0, "IMAGE"],
+    [3, 2, 1, 4, 0, "IMAGE"],
+    [4, 2, 1, 5, 0, "IMAGE"],
+    [5, 4, 0, 5, 1, "BBOX"],
+    [6, 5, 0, 6, 0, "MASK"],
+    [7, 3, 0, 8, 0, "IMAGE"],
+    [8, 2, 1, 8, 1, "IMAGE"],
+    [9, 6, 0, 7, 0, "MASK"],
+    [10, 7, 0, 8, 2, "MASK"],
+    [11, 8, 0, 9, 0, "IMAGE"],
+    [12, 8, 0, 10, 0, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "title": "1. Input and Split",
+      "bounding": [-1120, -220, 790, 320],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "2. Code White World",
+      "bounding": [-340, -340, 450, 270],
+      "color": "#737373",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "3. Artwork Detection and Masking",
+      "bounding": [-340, -20, 1710, 320],
+      "color": "#8f7b2f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "4. Restore Only Original Artwork Pixels",
+      "bounding": [1360, -240, 840, 390],
+      "color": "#3f8f66",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.72,
+      "offset": [1260, 420]
+    },
+    "pictureplane": {
+      "title": "White World Artwork Preservation",
+      "kind": "importable_comfyui_skeleton",
+      "required_custom_node_replacements": {
+        "PictureplaneImageSplitTwoCopies": "Any image pass-through/duplicate/fanout node, or direct links from LoadImage.",
+        "PictureplaneDesaturateImage": "Custom Python/image-processing node that performs deterministic desaturation.",
+        "PictureplaneArtworkDetector": "GroundingDINO, Florence, OWL-ViT, or equivalent open-vocabulary detector.",
+        "PictureplaneArtworkSegmenter": "SAM, SAM2, or equivalent box-guided segmenter.",
+        "PictureplaneMaskUnion": "Mask union/merge node.",
+        "PictureplaneMaskCleanup": "Threshold/grow/feather mask cleanup nodes."
+      },
+      "hard_constraints": [
+        "No full-image diffusion regeneration.",
+        "No hallucinated new artworks.",
+        "No camera, lighting, perspective, geometry, object, or layout changes.",
+        "Only non-artwork color is removed.",
+        "Artwork pixels are restored from the original image."
+      ]
+    }
+  },
+  "version": 0.4
+}

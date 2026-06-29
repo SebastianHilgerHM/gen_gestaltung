@@ -1,0 +1,1248 @@
+{
+  "id": "surface-artwork-placement",
+  "revision": 1,
+  "last_node_id": 23,
+  "last_link_id": 49,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "title": "Load Scene / World Image",
+      "pos": [-1500, -120],
+      "size": [315, 150],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [1, 2, 3, 9, 21, 26, 46]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": ["", "image"]
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "title": "Load Optional Artwork Image",
+      "pos": [-1500, 120],
+      "size": [315, 150],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [14, 18]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "optional": "If no provided artwork is needed, bypass or mute the optional-artwork branch and use gallery assets only."
+      },
+      "widgets_values": ["", "image"]
+    },
+    {
+      "id": 3,
+      "type": "PictureplaneAssetGalleryLoader",
+      "title": "Load Asset Gallery",
+      "pos": [-1500, 360],
+      "size": [370, 130],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gallery_path",
+          "type": "STRING",
+          "widget": {
+            "name": "gallery_path"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [10]
+        },
+        {
+          "name": "STYLE_REFS",
+          "type": "STYLE_REFS",
+          "links": [11]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneAssetGalleryLoader",
+        "preferred_replacements": "Any folder/gallery image loader custom node."
+      },
+      "widgets_values": ["ComfyUI/input/artwork_gallery"]
+    },
+    {
+      "id": 4,
+      "type": "PictureplaneDepthEstimator",
+      "title": "Estimate Depth",
+      "pos": [-1040, -300],
+      "size": [300, 110],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "DEPTH",
+          "type": "DEPTH",
+          "links": [4, 6, 22, 33, 43]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneDepthEstimator",
+        "preferred_replacements": "MiDaS, Depth Anything, ZoeDepth, or equivalent depth preprocessor."
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 5,
+      "type": "PictureplaneNormalEstimator",
+      "title": "Estimate Surface Normals",
+      "pos": [-680, -300],
+      "size": [330, 130],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "depth",
+          "type": "DEPTH",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "NORMALS",
+          "type": "NORMALS",
+          "links": [7, 23, 34, 44]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneNormalEstimator",
+        "preferred_replacements": "Normal map preprocessor or custom depth-to-normal node."
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 6,
+      "type": "PictureplaneSemanticSurfaceSegmenter",
+      "title": "Segment Visible Surfaces",
+      "pos": [-1040, -80],
+      "size": [430, 180],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "name": "target_classes",
+          "type": "STRING",
+          "widget": {
+            "name": "target_classes"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "SEGMENTS",
+          "type": "SEGMENTS",
+          "links": [5]
+        },
+        {
+          "name": "OCCLUDERS",
+          "type": "MASK",
+          "links": [27, 38]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneSemanticSurfaceSegmenter",
+        "preferred_replacements": "Semantic segmentation, GroundingDINO+SAM, or another surface-mask pipeline."
+      },
+      "widgets_values": ["wall, floor, ceiling, window, furniture, architectural surface, visible flat surface, visible curved surface"]
+    },
+    {
+      "id": 7,
+      "type": "PictureplaneSurfaceCandidateExtractor",
+      "title": "Extract Surface Candidates",
+      "pos": [-520, -80],
+      "size": [430, 190],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "segments",
+          "type": "SEGMENTS",
+          "link": 5
+        },
+        {
+          "name": "depth",
+          "type": "DEPTH",
+          "link": 6
+        },
+        {
+          "name": "normals",
+          "type": "NORMALS",
+          "link": 7
+        },
+        {
+          "name": "min_area_ratio",
+          "type": "FLOAT",
+          "widget": {
+            "name": "min_area_ratio"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "SURFACES",
+          "type": "SURFACES",
+          "links": [8]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneSurfaceCandidateExtractor",
+        "surface_record": "Each surface should include mask, polygon/quad, normal, depth range, perspective transform, and semantic class."
+      },
+      "widgets_values": [0.02]
+    },
+    {
+      "id": 8,
+      "type": "PictureplaneSurfaceRanking",
+      "title": "Rank Placeable Surfaces",
+      "pos": [-20, -80],
+      "size": [360, 140],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "surfaces",
+          "type": "SURFACES",
+          "link": 8
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "SURFACES",
+          "type": "SURFACES",
+          "links": [15]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneSurfaceRanking"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "PictureplaneGalleryAssetSelector",
+      "title": "Select Gallery Assets",
+      "pos": [-1040, 250],
+      "size": [400, 180],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "gallery_images",
+          "type": "IMAGE_COLLECTION",
+          "link": 10
+        },
+        {
+          "name": "density",
+          "type": "FLOAT",
+          "widget": {
+            "name": "density"
+          },
+          "link": null
+        },
+        {
+          "name": "variety",
+          "type": "FLOAT",
+          "widget": {
+            "name": "variety"
+          },
+          "link": null
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [12]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneGalleryAssetSelector"
+      },
+      "widgets_values": [0.45, 0.55, 1217]
+    },
+    {
+      "id": 10,
+      "type": "PictureplaneStyleSimilarArtworkGenerator",
+      "title": "Generate Similar Style Assets",
+      "pos": [-1040, 500],
+      "size": [470, 250],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "style_references",
+          "type": "STYLE_REFS",
+          "link": 11
+        },
+        {
+          "name": "variety",
+          "type": "FLOAT",
+          "widget": {
+            "name": "variety"
+          },
+          "link": null
+        },
+        {
+          "name": "style_similarity_strength",
+          "type": "FLOAT",
+          "widget": {
+            "name": "style_similarity_strength"
+          },
+          "link": null
+        },
+        {
+          "name": "positive_prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "positive_prompt"
+          },
+          "link": null
+        },
+        {
+          "name": "negative_prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "negative_prompt"
+          },
+          "link": null
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [13]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneStyleSimilarArtworkGenerator"
+      },
+      "widgets_values": [
+        0.55,
+        0.7,
+        "Generate standalone flat artwork images in a style consistent with the supplied gallery references. The images must be suitable for placing on real surfaces.",
+        "scene background, wall, room, frame-only image, perspective view, text artifacts, watermark, signature, photorealistic room render",
+        1217
+      ]
+    },
+    {
+      "id": 11,
+      "type": "PictureplaneMergeArtworkPool",
+      "title": "Merge Optional, Gallery, And Generated Artworks",
+      "pos": [-500, 300],
+      "size": [430, 180],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "optional_artwork",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "name": "gallery_images",
+          "type": "IMAGE_COLLECTION",
+          "link": 12
+        },
+        {
+          "name": "generated_images",
+          "type": "IMAGE_COLLECTION",
+          "link": 13
+        },
+        {
+          "name": "use_optional_artwork",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "use_optional_artwork"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [16, 29]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMergeArtworkPool"
+      },
+      "widgets_values": [true]
+    },
+    {
+      "id": 12,
+      "type": "PictureplaneSurfacePlacementPlanner",
+      "title": "Create Density / Variety / Overlap Placement Plan",
+      "pos": [440, 110],
+      "size": [500, 250],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "surfaces",
+          "type": "SURFACES",
+          "link": 15
+        },
+        {
+          "name": "artworks",
+          "type": "IMAGE_COLLECTION",
+          "link": 16
+        },
+        {
+          "name": "density",
+          "type": "FLOAT",
+          "widget": {
+            "name": "density"
+          },
+          "link": null
+        },
+        {
+          "name": "variety",
+          "type": "FLOAT",
+          "widget": {
+            "name": "variety"
+          },
+          "link": null
+        },
+        {
+          "name": "overlap",
+          "type": "FLOAT",
+          "widget": {
+            "name": "overlap"
+          },
+          "link": null
+        },
+        {
+          "name": "reserve_optional_artwork_first",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "reserve_optional_artwork_first"
+          },
+          "link": null
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OPTIONAL_PLACEMENTS",
+          "type": "PLACEMENTS",
+          "links": [17]
+        },
+        {
+          "name": "GALLERY_PLACEMENTS",
+          "type": "PLACEMENTS",
+          "links": [28]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneSurfacePlacementPlanner",
+        "placement_record": "Artwork id, surface id, destination polygon, z/order, opacity, and contact-shadow region."
+      },
+      "widgets_values": [0.45, 0.55, 0.1, true, 1217]
+    },
+    {
+      "id": 13,
+      "type": "PictureplanePerspectiveWarpBatch",
+      "title": "Perspective Warp Optional Artwork",
+      "pos": [1040, -90],
+      "size": [390, 150],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 18
+        },
+        {
+          "name": "placements",
+          "type": "PLACEMENTS",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [19]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [20, 25]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplanePerspectiveWarpBatch"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 14,
+      "type": "PictureplaneLocalLightingMatch",
+      "title": "Lighting Match Optional Artwork",
+      "pos": [1510, -90],
+      "size": [430, 210],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "base_image",
+          "type": "IMAGE",
+          "link": 21
+        },
+        {
+          "name": "warped_artworks",
+          "type": "IMAGE_COLLECTION",
+          "link": 19
+        },
+        {
+          "name": "placement_masks",
+          "type": "MASK",
+          "link": 20
+        },
+        {
+          "name": "depth",
+          "type": "DEPTH",
+          "link": 22
+        },
+        {
+          "name": "normals",
+          "type": "NORMALS",
+          "link": 23
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [24]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneLocalLightingMatch"
+      },
+      "widgets_values": [0.65]
+    },
+    {
+      "id": 15,
+      "type": "PictureplaneMaskedCompositeBatch",
+      "title": "Composite Optional Artwork",
+      "pos": [2020, -90],
+      "size": [430, 210],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "base_image",
+          "type": "IMAGE",
+          "link": 26
+        },
+        {
+          "name": "overlay_images",
+          "type": "IMAGE_COLLECTION",
+          "link": 24
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 25
+        },
+        {
+          "name": "foreground_occluders",
+          "type": "MASK",
+          "link": 27
+        },
+        {
+          "name": "edge_feather_px",
+          "type": "INT",
+          "widget": {
+            "name": "edge_feather_px"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [32, 37]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [39]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMaskedCompositeBatch"
+      },
+      "widgets_values": [3]
+    },
+    {
+      "id": 16,
+      "type": "PictureplanePerspectiveWarpBatch",
+      "title": "Perspective Warp Gallery Artworks",
+      "pos": [1040, 280],
+      "size": [390, 150],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE_COLLECTION",
+          "link": 29
+        },
+        {
+          "name": "placements",
+          "type": "PLACEMENTS",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [30]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [31, 36]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplanePerspectiveWarpBatch"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 17,
+      "type": "PictureplaneLocalLightingMatch",
+      "title": "Lighting Match Gallery Artworks",
+      "pos": [1510, 280],
+      "size": [430, 210],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "base_image",
+          "type": "IMAGE",
+          "link": 32
+        },
+        {
+          "name": "warped_artworks",
+          "type": "IMAGE_COLLECTION",
+          "link": 30
+        },
+        {
+          "name": "placement_masks",
+          "type": "MASK",
+          "link": 31
+        },
+        {
+          "name": "depth",
+          "type": "DEPTH",
+          "link": 33
+        },
+        {
+          "name": "normals",
+          "type": "NORMALS",
+          "link": 34
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGES",
+          "type": "IMAGE_COLLECTION",
+          "links": [35]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneLocalLightingMatch"
+      },
+      "widgets_values": [0.65]
+    },
+    {
+      "id": 18,
+      "type": "PictureplaneMaskedCompositeBatch",
+      "title": "Composite Gallery Artworks",
+      "pos": [2020, 280],
+      "size": [430, 210],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "base_image",
+          "type": "IMAGE",
+          "link": 37
+        },
+        {
+          "name": "overlay_images",
+          "type": "IMAGE_COLLECTION",
+          "link": 35
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": 36
+        },
+        {
+          "name": "foreground_occluders",
+          "type": "MASK",
+          "link": 38
+        },
+        {
+          "name": "edge_feather_px",
+          "type": "INT",
+          "widget": {
+            "name": "edge_feather_px"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [41]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [40]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMaskedCompositeBatch"
+      },
+      "widgets_values": [3]
+    },
+    {
+      "id": 19,
+      "type": "PictureplaneMaskUnion",
+      "title": "Build Total Artwork Edit Mask",
+      "pos": [2570, 120],
+      "size": [330, 140],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask_a",
+          "type": "MASK",
+          "link": 39
+        },
+        {
+          "name": "mask_b",
+          "type": "MASK",
+          "link": 40
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [42, 47]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMaskUnion"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 20,
+      "type": "PictureplaneMaskedInpaintWithControlNet",
+      "title": "Localized Edge / Shadow Inpaint Only",
+      "pos": [3020, 40],
+      "size": [540, 300],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 41
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 42
+        },
+        {
+          "name": "depth_control",
+          "type": "DEPTH",
+          "link": 43
+        },
+        {
+          "name": "normal_control",
+          "type": "NORMALS",
+          "link": 44
+        },
+        {
+          "name": "denoise",
+          "type": "FLOAT",
+          "widget": {
+            "name": "denoise"
+          },
+          "link": null
+        },
+        {
+          "name": "positive_prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "positive_prompt"
+          },
+          "link": null
+        },
+        {
+          "name": "negative_prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "negative_prompt"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [45]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PictureplaneMaskedInpaintWithControlNet",
+        "warning": "Keep denoise low. This is only for contact edges, shadows, and material integration."
+      },
+      "widgets_values": [
+        0.18,
+        "Realistic physical artwork applied to the visible surface, matching perspective, local lighting, contact shadows, occlusion, surface angle, and material response. Preserve the scene exactly outside the mask.",
+        "changed room layout, changed camera angle, distorted furniture, extra objects, new windows, warped scene, full image repaint, text artifacts, watermark, oversaturated colors"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "ImageCompositeMasked",
+      "title": "Restore Untouched Original Pixels",
+      "pos": [3680, 60],
+      "size": [390, 180],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "destination",
+          "name": "destination",
+          "type": "IMAGE",
+          "link": 46
+        },
+        {
+          "localized_name": "source",
+          "name": "source",
+          "type": "IMAGE",
+          "link": 45
+        },
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "shape": 7,
+          "type": "MASK",
+          "link": 47
+        },
+        {
+          "localized_name": "x",
+          "name": "x",
+          "type": "INT",
+          "widget": {
+            "name": "x"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "y",
+          "name": "y",
+          "type": "INT",
+          "widget": {
+            "name": "y"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "resize_source",
+          "name": "resize_source",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "resize_source"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [48, 49]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageCompositeMasked",
+        "purpose": "Hard-limit final changes to the total artwork edit mask."
+      },
+      "widgets_values": [0, 0, false]
+    },
+    {
+      "id": 22,
+      "type": "PreviewImage",
+      "pos": [4160, 10],
+      "size": [210, 80],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 48
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 23,
+      "type": "SaveImage",
+      "pos": [4160, 140],
+      "size": [315, 100],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 49
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": ["surface_artwork_placement"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 4, 0, "IMAGE"],
+    [2, 1, 0, 5, 0, "IMAGE"],
+    [3, 1, 0, 6, 0, "IMAGE"],
+    [4, 4, 0, 5, 1, "DEPTH"],
+    [5, 6, 0, 7, 0, "SEGMENTS"],
+    [6, 4, 0, 7, 1, "DEPTH"],
+    [7, 5, 0, 7, 2, "NORMALS"],
+    [8, 7, 0, 8, 0, "SURFACES"],
+    [9, 1, 0, 8, 1, "IMAGE"],
+    [10, 3, 0, 9, 0, "IMAGE_COLLECTION"],
+    [11, 3, 1, 10, 0, "STYLE_REFS"],
+    [12, 9, 0, 11, 1, "IMAGE_COLLECTION"],
+    [13, 10, 0, 11, 2, "IMAGE_COLLECTION"],
+    [14, 2, 0, 11, 0, "IMAGE"],
+    [15, 8, 0, 12, 0, "SURFACES"],
+    [16, 11, 0, 12, 1, "IMAGE_COLLECTION"],
+    [17, 12, 0, 13, 1, "PLACEMENTS"],
+    [18, 2, 0, 13, 0, "IMAGE"],
+    [19, 13, 0, 14, 1, "IMAGE_COLLECTION"],
+    [20, 13, 1, 14, 2, "MASK"],
+    [21, 1, 0, 14, 0, "IMAGE"],
+    [22, 4, 0, 14, 3, "DEPTH"],
+    [23, 5, 0, 14, 4, "NORMALS"],
+    [24, 14, 0, 15, 1, "IMAGE_COLLECTION"],
+    [25, 13, 1, 15, 2, "MASK"],
+    [26, 1, 0, 15, 0, "IMAGE"],
+    [27, 6, 1, 15, 3, "MASK"],
+    [28, 12, 1, 16, 1, "PLACEMENTS"],
+    [29, 11, 0, 16, 0, "IMAGE_COLLECTION"],
+    [30, 16, 0, 17, 1, "IMAGE_COLLECTION"],
+    [31, 16, 1, 17, 2, "MASK"],
+    [32, 15, 0, 17, 0, "IMAGE"],
+    [33, 4, 0, 17, 3, "DEPTH"],
+    [34, 5, 0, 17, 4, "NORMALS"],
+    [35, 17, 0, 18, 1, "IMAGE_COLLECTION"],
+    [36, 16, 1, 18, 2, "MASK"],
+    [37, 15, 0, 18, 0, "IMAGE"],
+    [38, 6, 1, 18, 3, "MASK"],
+    [39, 15, 1, 19, 0, "MASK"],
+    [40, 18, 1, 19, 1, "MASK"],
+    [41, 18, 0, 20, 0, "IMAGE"],
+    [42, 19, 0, 20, 1, "MASK"],
+    [43, 4, 0, 20, 2, "DEPTH"],
+    [44, 5, 0, 20, 3, "NORMALS"],
+    [45, 20, 0, 21, 1, "IMAGE"],
+    [46, 1, 0, 21, 0, "IMAGE"],
+    [47, 19, 0, 21, 2, "MASK"],
+    [48, 21, 0, 22, 0, "IMAGE"],
+    [49, 21, 0, 23, 0, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "title": "1. Inputs",
+      "bounding": [-1540, -220, 460, 790],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "2. Scene Surface Analysis",
+      "bounding": [-1080, -390, 1470, 560],
+      "color": "#6b7f44",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "3. Gallery, Style, And Placement Planning",
+      "bounding": [-1080, 210, 2070, 600],
+      "color": "#8f7b2f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "4. Optional Artwork Branch",
+      "bounding": [1000, -180, 1500, 360],
+      "color": "#8c5d6f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "5. Gallery Artwork Branch",
+      "bounding": [1000, 210, 1500, 360],
+      "color": "#8c5d6f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "6. Local Integration And Pixel Restore",
+      "bounding": [2530, -40, 1990, 430],
+      "color": "#3f8f66",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.42,
+      "offset": [1460, 420]
+    },
+    "pictureplane": {
+      "title": "Surface Artwork Placement",
+      "kind": "importable_comfyui_skeleton",
+      "required_custom_node_replacements": {
+        "PictureplaneAssetGalleryLoader": "Folder/gallery image loader.",
+        "PictureplaneDepthEstimator": "Depth Anything, MiDaS, ZoeDepth, or equivalent.",
+        "PictureplaneNormalEstimator": "Normal map preprocessor or depth-to-normal node.",
+        "PictureplaneSemanticSurfaceSegmenter": "Semantic segmentation or GroundingDINO+SAM surface detector.",
+        "PictureplaneSurfaceCandidateExtractor": "Custom plane/surface extraction from masks, depth, and normals.",
+        "PictureplaneSurfaceRanking": "Custom ranking/filter node for believable placement surfaces.",
+        "PictureplaneGalleryAssetSelector": "Custom/gallery selector node driven by density, variety, and seed.",
+        "PictureplaneStyleSimilarArtworkGenerator": "Optional image-generation branch conditioned on gallery references.",
+        "PictureplaneMergeArtworkPool": "Collection merge/gate node.",
+        "PictureplaneSurfacePlacementPlanner": "Custom layout planner for density, variety, overlap, and surface constraints.",
+        "PictureplanePerspectiveWarpBatch": "Perspective transform/warp batch node.",
+        "PictureplaneLocalLightingMatch": "Local luminance, shadow, highlight, and color-temperature matching.",
+        "PictureplaneMaskedCompositeBatch": "Batch masked composite with occlusion support.",
+        "PictureplaneMaskUnion": "Mask union/merge node.",
+        "PictureplaneMaskedInpaintWithControlNet": "Low-denoise masked inpaint with depth/normal conditioning."
+      },
+      "exposed_parameters": {
+        "density": "0.45, controls placement count/coverage.",
+        "variety": "0.55, controls asset diversity.",
+        "overlap": "0.1, controls allowed intersection between placements.",
+        "style_similarity_strength": "0.7, controls similarity for generated supplemental artworks.",
+        "lighting_match_strength": "0.65, controls local lighting adaptation.",
+        "inpaint_strength": "0.18, keep low to avoid scene drift."
+      },
+      "hard_constraints": [
+        "Do not alter the base scene outside the artwork edit mask.",
+        "Do not change world layout, camera angle, people, furniture, lighting direction, or scene structure.",
+        "Do not repaint the full image.",
+        "Respect visible surface boundaries, perspective, occlusion, and local lighting.",
+        "Density controls placement count/coverage.",
+        "Variety controls artwork diversity.",
+        "Overlap controls whether placed artworks can intersect."
+      ]
+    }
+  },
+  "version": 0.4
+}
