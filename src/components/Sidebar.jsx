@@ -1,23 +1,34 @@
 import * as Icons from 'lucide-react';
-import tools from '../tools/index.js';
 
-export default function Sidebar({ activeTool, onSelect }) {
+export default function Sidebar({ tabs, activeTabId, onSelectTab, toolId, onSelectTool }) {
+  const activeTab = tabs.find(tab => tab.id === activeTabId);
+
   return (
     <nav className="tool-tabs">
-      {tools.map(tool => {
-        const Icon = Icons[tool.iconName] ?? Icons.Box;
+      {tabs.map(tab => {
+        const Icon = Icons[tab.iconName] ?? Icons.Box;
         return (
           <button
-            key={tool.id}
-            className={`tool-tab${activeTool === tool.id ? ' active' : ''}`}
-            onClick={() => onSelect(tool.id)}
-            title={`${tool.label}: ${tool.description}`}
+            key={tab.id}
+            className={`tool-tab${activeTabId === tab.id ? ' active' : ''}`}
+            onClick={() => onSelectTab(tab.id)}
+            title={tab.label}
           >
             <Icon size={15} />
-            <span>{tool.label}</span>
+            <span>{tab.label}</span>
           </button>
         );
       })}
+
+      {activeTab.tools.length > 1 && (
+        <div className="tool-subselect">
+          <select value={toolId} onChange={e => onSelectTool(e.target.value)}>
+            {activeTab.tools.map(tool => (
+              <option key={tool.id} value={tool.id}>{tool.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
     </nav>
   );
 }

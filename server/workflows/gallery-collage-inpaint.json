@@ -1,0 +1,301 @@
+{
+  "1": {
+    "inputs": {
+      "image": "a2f77ea686cb1991b265e6c83662055f8ef12d013658914443ceacaf2b8792c9.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Original Photo"
+    }
+  },
+  "2": {
+    "inputs": {
+      "factor": 1,
+      "method": "luminance (Rec.709)",
+      "image": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "ImageDesaturate+",
+    "_meta": {
+      "title": "Desaturate Gallery (gray base)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "prompt": "framed artwork. painting. picture.",
+      "sam2_model": "sam2.1_hiera_tiny",
+      "dino_model": "GroundingDINO_SwinT_OGC (694MB)",
+      "device": "Auto",
+      "threshold": 0.22,
+      "mask_blur": 0,
+      "mask_offset": 0,
+      "invert_output": false,
+      "background": "Alpha",
+      "background_color": "#222222",
+      "image": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "SAM2Segment",
+    "_meta": {
+      "title": "SAM2 Segmentation (RMBG) - detect full artworks"
+    }
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "sd_xl_base_1.0.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load SDXL Checkpoint"
+    }
+  },
+  "5": {
+    "inputs": {
+      "expand": -12,
+      "tapered_corners": true,
+      "mask": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "GrowMask",
+    "_meta": {
+      "title": "Shrink To Inner Canvas (expand = -12)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "operation": "subtract",
+      "destination": [
+        "3",
+        1
+      ],
+      "source": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "MaskComposite",
+    "_meta": {
+      "title": "Frame Mask = Full minus Inner"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "graffiti, subtle black tags overlaying, stickers",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Prompt: colorful art collage"
+    }
+  },
+  "8": {
+    "inputs": {
+      "text": "picture frame, gold frame, wall, furniture, sofa, floor, blurry, low quality, text, watermark, signature, border, deformed",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "9": {
+    "inputs": {
+      "seed": 900430576584503,
+      "steps": 28,
+      "cfg": 7,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "8",
+        0
+      ],
+      "latent_image": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (denoise 1.0 = full repaint)"
+    }
+  },
+  "10": {
+    "inputs": {
+      "samples": [
+        "9",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "11": {
+    "inputs": {
+      "grow_mask_by": 6,
+      "pixels": [
+        "1",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ],
+      "mask": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "VAEEncodeForInpaint",
+    "_meta": {
+      "title": "VAE Encode (for Inpainting)"
+    }
+  },
+  "12": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "destination": [
+        "2",
+        0
+      ],
+      "source": [
+        "10",
+        0
+      ],
+      "mask": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "ImageCompositeMasked",
+    "_meta": {
+      "title": "Layer 1: new art over gray gallery"
+    }
+  },
+  "13": {
+    "inputs": {
+      "images": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Final Preview"
+    }
+  },
+  "14": {
+    "inputs": {
+      "filename_prefix": "gallery_collage",
+      "images": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "15": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "destination": [
+        "12",
+        0
+      ],
+      "source": [
+        "1",
+        0
+      ],
+      "mask": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "ImageCompositeMasked",
+    "_meta": {
+      "title": "Layer 2: original frames on top"
+    }
+  },
+  "16": {
+    "inputs": {
+      "mask": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "MaskToImage",
+    "_meta": {
+      "title": "Inner mask (debug)"
+    }
+  },
+  "17": {
+    "inputs": {
+      "images": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Inner Mask Preview"
+    }
+  },
+  "18": {
+    "inputs": {
+      "mask": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "MaskToImage",
+    "_meta": {
+      "title": "Frame mask (debug)"
+    }
+  },
+  "19": {
+    "inputs": {
+      "images": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Frame Mask Preview"
+    }
+  }
+}

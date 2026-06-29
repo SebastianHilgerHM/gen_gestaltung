@@ -46,6 +46,7 @@ async function imageDataToAsset(imageData, id, name) {
 
 export function PictureplaneProvider({ children }) {
   const nextId = useRef(1);
+  const [format, setFormat] = useState(null);
   const [image, setImage] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
   const [artwork, setArtwork] = useState(null);
@@ -161,6 +162,8 @@ export function PictureplaneProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
+    format,
+    setFormat,
     image,
     originalImage,
     artwork,
@@ -183,6 +186,7 @@ export function PictureplaneProvider({ children }) {
     setQuadMapper,
     setArtworkPlacer,
   }), [
+    format,
     image,
     originalImage,
     artwork,

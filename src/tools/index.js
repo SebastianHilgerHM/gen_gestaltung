@@ -1,29 +1,49 @@
 import Decolorize from './Decolorize/index.jsx';
 import QuadMapper from './QuadMapper/index.jsx';
 import ArtworkPlacer from './ArtworkPlacer/index.jsx';
+import GalleryCollage from './GalleryCollage/index.jsx';
 
-const tools = [
+const manualTools = [
   {
     id: 'decolorize',
     label: 'Decolorize',
-    iconName: 'SunMedium',
     description: 'Luminance remapping with color preservation',
     component: Decolorize,
   },
   {
     id: 'quad-mapper',
     label: 'Quad Mapper',
-    iconName: 'Maximize2',
     description: 'Perspective warp via 4-point homography',
     component: QuadMapper,
   },
   {
     id: 'artwork-placer',
     label: 'Artwork Placer',
-    iconName: 'Move',
     description: 'Free-position artwork compositing',
     component: ArtworkPlacer,
   },
 ];
 
-export default tools;
+const tabs = [
+  {
+    id: 'manual',
+    label: 'Manuell',
+    iconName: 'SlidersHorizontal',
+    tools: manualTools,
+  },
+  {
+    id: 'gallery-collage',
+    label: 'Gallery Collage',
+    iconName: 'Sparkles',
+    tools: [
+      {
+        id: 'gallery-collage',
+        label: 'Gallery Collage',
+        description: 'AI inpainting of framed artworks via ComfyUI Cloud',
+        component: GalleryCollage,
+      },
+    ],
+  },
+];
+
+export default tabs;

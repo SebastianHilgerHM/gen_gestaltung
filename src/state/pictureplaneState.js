@@ -17,6 +17,14 @@ export const PLACER_DEFAULTS = {
   blendMode: 'normal',
 };
 
+export const FORMAT_PRESETS = [
+  { id: 'poster', label: 'Poster', desc: 'Hochformat für Druck', width: 2480, height: 3508, iconName: 'Image' },
+  { id: 'banner', label: 'Banner', desc: 'Breites Werbeformat, hochauflösend', width: 3840, height: 1280, iconName: 'RectangleHorizontal' },
+  { id: 'ticket', label: 'Ticket', desc: 'Eintrittskarte im Querformat', width: 1680, height: 730, iconName: 'Ticket' },
+  { id: 'custom', label: 'Custom', desc: 'Eigene Maße eingeben', width: null, height: null, iconName: 'PencilRuler' },
+  { id: 'original', label: 'Originalgröße', desc: 'Maße des geladenen Bildes', width: null, height: null, iconName: 'Maximize' },
+];
+
 export const StoreContext = createContext(null);
 
 export const DEFAULT_LAYER_ORDER = ['image', 'artwork'];

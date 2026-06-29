@@ -1,5 +1,6 @@
 services:
   comfyui:
+    profiles: ["local"]
     build: ./docker/comfyui
     ports:
       - "8188:8188"
@@ -15,8 +16,7 @@ services:
     ports:
       - "8189:8189"
     environment:
-      - COMFY_URL=http://comfyui:8188
+      - COMFY_URL=${COMFY_URL:-https://cloud.comfy.org}
+      - COMFY_API_KEY=${COMFY_API_KEY:-}
       - PORT=8189
-    depends_on:
-      - comfyui
     restart: unless-stopped
