@@ -20,7 +20,7 @@ export const PLACER_DEFAULTS = {
 export const FORMAT_PRESETS = [
   { id: 'poster', label: 'Poster', desc: 'Hochformat für Druck', width: 2480, height: 3508, iconName: 'Image' },
   { id: 'banner', label: 'Banner', desc: 'Breites Werbeformat, hochauflösend', width: 3840, height: 1280, iconName: 'RectangleHorizontal' },
-  { id: 'ticket', label: 'Ticket', desc: 'Eintrittskarte im Querformat', width: 1680, height: 730, iconName: 'Ticket' },
+  { id: 'ticket', label: 'Ticket', desc: 'Eintrittskarte im Querformat', width: 1622, height: 718, iconName: 'Ticket' },
   { id: 'custom', label: 'Custom', desc: 'Eigene Maße eingeben', width: null, height: null, iconName: 'PencilRuler' },
   { id: 'original', label: 'Originalgröße', desc: 'Maße des geladenen Bildes', width: null, height: null, iconName: 'Maximize' },
 ];

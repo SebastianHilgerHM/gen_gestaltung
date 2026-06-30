@@ -15,17 +15,6 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function leftRoundedPath(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + w, y);
-  ctx.lineTo(x + r, y);
-  ctx.arcTo(x, y, x, y + r, r);
-  ctx.lineTo(x, y + h - r);
-  ctx.arcTo(x, y + h, x + r, y + h, r);
-  ctx.lineTo(x + w, y + h);
-  ctx.closePath();
-}
-
 function drawBarcode(ctx, x, y, w, h, seed) {
   let s = 0;
   for (let i = 0; i < seed.length; i++) s = (s * 31 + seed.charCodeAt(i)) >>> 0;
@@ -43,75 +32,86 @@ function drawBarcode(ctx, x, y, w, h, seed) {
 }
 
 export function drawTicket(ctx, { img, W, H, fields }) {
-  const r = H * 0.06;
-  const gap = W * 0.012;
-  const splitX = W * 0.73;
+  // two rounded cards (main image panel + right stub), per SVG layout
+  const r = H * 0.064;
+  const mainW = W * 0.748;
+  const stubX = W * 0.751;
+  const stubW = W - stubX;
 
-  // white card base (right stub is white)
-  ctx.fillStyle = '#fff';
-  roundRect(ctx, 0, 0, W, H, r);
-  ctx.fill();
-
-  // image panel (left, rounded left corners)
+  // main image card
   ctx.save();
-  leftRoundedPath(ctx, 0, 0, splitX, H, r);
+  roundRect(ctx, 0, 0, mainW, H, r);
   ctx.clip();
   if (img) {
-    const scale = Math.max(splitX / img.naturalWidth, H / img.naturalHeight);
+    const scale = Math.max(mainW / img.naturalWidth, H / img.naturalHeight);
     const iw = img.naturalWidth * scale;
     const ih = img.naturalHeight * scale;
-    ctx.drawImage(img, (splitX - iw) / 2, (H - ih) / 2, iw, ih);
+    ctx.drawImage(img, (mainW - iw) / 2, (H - ih) / 2, iw, ih);
   } else {
-    ctx.fillStyle = '#a9adb2';
-    ctx.fillRect(0, 0, splitX, H);
+    ctx.fillStyle = '#a5a5a5';
+    ctx.fillRect(0, 0, mainW, H);
   }
   ctx.restore();
 
-  // perforation
+  // right stub card
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, stubX, 0, stubW, H, r);
+  ctx.fill();
+
+  // brand label (white box, vertical text) — box sized to fit the text
+  const fs1 = H * 0.05;
+  const fs2 = H * 0.044;
+  const ls = fs1 * 0.12;
+  const font1 = `800 ${fs1}px Inter, system-ui, sans-serif`;
+  const font2 = `300 ${fs2}px Inter, system-ui, sans-serif`;
+
   ctx.save();
-  ctx.strokeStyle = 'rgba(120,124,130,0.55)';
-  ctx.lineWidth = Math.max(2, H * 0.004);
-  ctx.setLineDash([H * 0.022, H * 0.018]);
-  ctx.beginPath();
-  ctx.moveTo(splitX + gap / 2, H * 0.05);
-  ctx.lineTo(splitX + gap / 2, H * 0.95);
-  ctx.stroke();
+  ctx.letterSpacing = `${ls}px`;
+  ctx.font = font1;
+  const wTop = ctx.measureText(fields.brandTop).width;
+  ctx.font = font2;
+  const wBottom = ctx.measureText(fields.brandBottom).width;
   ctx.restore();
 
-  // brand label (white box, vertical text)
-  const bw = W * 0.09;
-  const bh = H * 0.52;
+  const cap1 = fs1 * 0.74;
+  const cap2 = fs2 * 0.74;
+  const innerGap = fs1 * 0.24;
+  const padH = fs1 * 0.45;
+  const padV = fs1 * 0.45;
+
+  const boxW = cap1 + cap2 + innerGap + padH * 2;
+  const boxH = Math.max(wTop, wBottom) + padV * 2;
   const bx = W * 0.03;
-  const by = (H - bh) / 2;
+  const by = (H - boxH) / 2;
+
   ctx.fillStyle = '#fff';
-  roundRect(ctx, bx, by, bw, bh, bw * 0.16);
+  roundRect(ctx, bx, by, boxW, boxH, boxW * 0.16);
   ctx.fill();
+
   ctx.save();
-  ctx.translate(bx + bw / 2, by + bh / 2);
+  ctx.translate(bx + boxW / 2, by + boxH / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.letterSpacing = `${ls}px`;
   ctx.fillStyle = '#111';
-  ctx.letterSpacing = `${bw * 0.05}px`;
-  ctx.font = `800 ${bw * 0.34}px Inter, system-ui, sans-serif`;
-  ctx.fillText(fields.brandTop, 0, bw * 0.18);
-  ctx.font = `300 ${bw * 0.3}px Inter, system-ui, sans-serif`;
-  ctx.fillText(fields.brandBottom, 0, -bw * 0.24);
+  ctx.font = font1;
+  ctx.fillText(fields.brandTop, 0, innerGap / 2 + cap1 / 2);
+  ctx.font = font2;
+  ctx.fillText(fields.brandBottom, 0, -(innerGap / 2 + cap2 / 2));
   ctx.restore();
 
   // price (top of right stub)
-  const right = W - W * 0.025;
+  const right = W - W * 0.022;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#111';
-  ctx.font = `600 ${H * 0.045}px Inter, system-ui, sans-serif`;
-  ctx.fillText(fields.priceMain, right, H * 0.14);
+  ctx.font = `600 ${H * 0.044}px Inter, system-ui, sans-serif`;
+  ctx.fillText(fields.priceMain, right, H * 0.135);
   ctx.fillStyle = '#8a8f96';
   ctx.font = `400 ${H * 0.03}px Inter, system-ui, sans-serif`;
-  ctx.fillText(fields.priceSub, right, H * 0.2);
+  ctx.fillText(fields.priceSub, right, H * 0.195);
 
   // barcode (bottom of right stub)
-  const cw = (W - (splitX + gap)) - W * 0.05;
-  const cx = splitX + gap + W * 0.02;
-  drawBarcode(ctx, cx, H * 0.74, cw, H * 0.14, fields.priceMain + fields.priceSub);
+  drawBarcode(ctx, stubX + stubW * 0.1, H * 0.72, stubW * 0.8, H * 0.16, fields.priceMain + fields.priceSub);
 }
